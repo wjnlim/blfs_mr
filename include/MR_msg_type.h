@@ -1,0 +1,33 @@
+#ifndef MR_MSG_TYPE_H
+#define MR_MSG_TYPE_H
+
+#define INIT_CONN "INIT_CONN"
+#define CONN_INITED "CONN_INITED"
+
+#define J_INIT "J_INIT"
+#define J_INITED "J_INITED"
+#define J_LNCH_MT "J_LNCH_MT"
+#define J_LNCH_RT "J_LNCH_RT"
+#define J_MT_LNCHD "J_MT_LNCHD"
+#define J_RT_LNCHD "J_RT_LNCHD"
+#define J_MAPOUTPUT "J_MAPOUTPUT"
+#define J_TASK_DONE "J_TASK_DONE"
+#define J_ABORT "J_ABORT"
+#define J_FWD_INTF_LOC "J_FWD_INTF_LOC"
+#define J_START_REDUCE_PHASE "J_START_REDUCE_PHASE"
+#define J_TASK_CLEANUP "J_TASK_CLEANUP"
+#define J_TASK_CLEANED_UP "J_TASK_CLEANED_UP"
+
+#define T_MT_LNCHD "T_MT_LNCHD"
+#define T_RT_LNCHD "T_RT_LNCHD"
+#define T_GET_SHF "T_GET_SHF"
+#define T_SHF "T_SHF"
+#define T_MAPOUTPUT "T_MAPOUTPUT"
+#define T_GET_INTF "T_GET_INTF"
+#define T_INTF "T_INTF"
+#define T_DONE "T_DONE"
+#define T_GET_INTF "T_GET_INTF"
+#define T_START_REDUCE_PHASE "T_START_REDUCE_PHASE"
+#define T_CLEANUP "T_CLEANUP"
+
+#endif
