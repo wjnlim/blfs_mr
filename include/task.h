@@ -4,7 +4,7 @@
 #include <sys/queue.h>
 #include <linux/limits.h>
 
-#include "utils_ds/state_machine.h"
+#include "utils/state_machine.h"
 #include "worker_context_fwd.h"
 #include "shared_file_struct.h"
 #include "intermediate_file_sturct.h"

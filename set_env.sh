@@ -1,3 +1,3 @@
 #! /bin/bash
 
-echo "export MRWSI_HOME=$PWD" >> $HOME/.bashrc 
+echo "export BLFS_MR_HOME=$PWD" >> $HOME/.bashrc 

@@ -9,7 +9,7 @@ typedef void (*Reducer)(const char* key, ValueIterator get_next_val/* , int part
 void MR_emit_kv(char* key, char* val);
 void MR_emit_result(const char* key, const char* result);
 
-void test_MR_run_task(int argc, char* argv[], Mapper map, Reducer reduce);
+// void test_MR_run_task(int argc, char* argv[], Mapper map, Reducer reduce);
 void MR_run_task(int argc, char* argv[], Mapper map, Reducer reduce);
 
 #endif

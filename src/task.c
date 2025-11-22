@@ -12,7 +12,7 @@
 #include "utils/my_err.h"
 #include "utils_ds/blocking_queue.h"
 #include "worker.h"
-#include "utils_ds/state_machine.h"
+#include "utils/state_machine.h"
 #include "shared_file_struct.h"
 #include "msg_pass/mp_buf_sizes.h"
 #include "MR_msg_type.h"

@@ -676,11 +676,11 @@ void worker_context_init(const char* worker_name, const char* worker_ip,
     // g_wctx.output_dir = output_dir;
 
     // build worker's output dir
-    const char* mrwsi_home_env = getenv("MRWSI_HOME");
-    if (mrwsi_home_env == NULL) {
-        err_exit("[worker.c: worker_context_init()] MRWSI_HOME env variable not found.");
+    const char* blfs_mr_home_env = getenv("BLFS_MR_HOME");
+    if (blfs_mr_home_env == NULL) {
+        err_exit("[worker.c: worker_context_init()] BLFS_MR_HOME env variable not found.");
     }
-    sprintf(g_wctx.worker_output_dir, "%s/data/outputs", mrwsi_home_env);
+    sprintf(g_wctx.worker_output_dir, "%s/data/outputs", blfs_mr_home_env);
 
     g_wctx.master_conn = NULL;
 

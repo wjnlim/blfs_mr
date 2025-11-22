@@ -19,8 +19,8 @@ if [ ! -f "$mrexec_path" ]; then
     exit 1
 fi
 
-# copy the mapreduce executable into workers
-remote_dir="\$MRWSI_HOME/mapred_bin"
+# copy the mapreduce executable to workers
+remote_dir="\$BLFS_MR_HOME/mapred_bin"
 for worker_ip in $(cat $worker_list | awk -F: '{print $2}');
 do
     dir=$(ssh $worker_ip "mkdir -p $remote_dir; echo $remote_dir")

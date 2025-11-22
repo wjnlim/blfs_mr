@@ -22,11 +22,13 @@ do
     worker="$(echo $line | awk -F: '{print $1}')"
     ip="$(echo $line | awk -F: '{print $2}')"
     # echo $ip
-    ssh "$ip" 'mkdir -p $MRWSI_HOME/data/inputs; mkdir $MRWSI_HOME/data/outputs;\
-    mkdir $MRWSI_HOME/mnt'
+    ssh "$ip" "mkdir -p \$BLFS_MR_HOME/data/inputs; mkdir \$BLFS_MR_HOME/data/outputs;\
+    cd \$BLFS_MR_HOME && ./mnt_targets.sh $worker"
+    # ssh "$ip" 'mkdir -p $BLFS_MR_HOME/data/inputs; mkdir $BLFS_MR_HOME/data/outputs;\
+    # mkdir $BLFS_MR_HOME/mnt'
     for l in $(cat $workerlist);
     do
         w="$(echo $l | awk -F: '{print $1}')"
-        ssh "$ip" "mkdir \$MRWSI_HOME/mnt/$w"
+        ssh "$ip" "mkdir \$BLFS_MR_HOME/mnt/$w"
     done
 done
