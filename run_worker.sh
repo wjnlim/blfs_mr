@@ -10,7 +10,7 @@ fi
 opts=$(getopt -o=b --name "$0" -- "$@") || exit 1
 eval set -- "$opts"
 
-workerlist="workers"
+workerlist="$BLFS_MR_HOME/workers"
 # parse options
 while true; do
     case "$1" in
@@ -41,7 +41,8 @@ worker_ip=$(cat $workerlist | grep "$worker_name" | awk -F: '{print $2}')
 worker_dev=$(lsscsi | awk "/${worker_name}_shared/ {print \$NF}")
 
 # cmd="$worker_exec $worker_name $worker_ip mapred_bin sharedfiles mnt $worker_dev"
-cmd="bin/worker $worker_name $worker_ip mapred_bin sharedfiles mnt $worker_dev"
+cmd="$BLFS_MR_HOME/bin/worker $worker_name $worker_ip \
+$BLFS_MR_HOME/mapred_bin $BLFS_MR_HOME/sharedfiles $BLFS_MR_HOME/mnt $worker_dev"
 if [[ "$background" == "true" ]]; then
     echo "executing in the background: $cmd"
     $cmd &
