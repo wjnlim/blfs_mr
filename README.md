@@ -26,9 +26,9 @@ Direct block-level data access across nodes without network-based file copying.
 * **Simplified MapReduce workflow**\
 No shuffle handler, fetcher, or auxiliary data transfer daemons.
 * **Cache-Consistent Shared Access using:**
-    * Pre-allocated intermediate files
-    * Explicit fsync() on both file and block device
-    * O_DIRECT reads on reducers to bypass page cache
+    * **Pre-allocated** intermediate files
+    * Explicit **fsync()** on both file and block device
+    * **O_DIRECT** reads on reducers to bypass page cache
 * **Notes**
     * This project is mainly for an **experimental** MapReduce framework design.\
     Thus, the implementation may lack fault-tolerance, load balancing, proper error-handling, so please use it with caution.
@@ -142,7 +142,8 @@ sudo targetcli "backstores/block create name=<worker name>_shared dev=/dev/sdX"
 sudo targetcli "iscsi/ create iqn.2022-05.<ip>:<worker name>"
 
 # create a LUN
-sudo targetcli "iscsi/iqn.2022-05.<ip>:<worker name>/tpg1/luns create \ /backstores/block/<worker name>_shared"
+sudo targetcli "iscsi/iqn.2022-05.<ip>:<worker name>/tpg1/luns \
+create /backstores/block/<worker name>_shared"
 
 # Add all initiator names to the ACL, enabling them to
 # connect the target
@@ -157,7 +158,7 @@ create iqn.1994-05.com.redhat:DDDD"
 # save the configuration
 sudo targetcli "saveconfig"
 
-# discover and log in
+# discover and log in to the local target
 iscsiadm --mode discovery --type sendtargets --portal <ip>
 iscsiadm -m node -T iqn.2022-05.<ip>:<worker name> -l
 

@@ -30,9 +30,10 @@ else()
         GIT_REPOSITORY https://github.com/wjnlim/msg_pass.git
     )
     FetchContent_GetProperties(Msg_pass)
-    if(NOT Msg_pass_POPULATED)
+    string(TOLOWER Msg_pass lc_Msg_pass)
+    if(NOT ${lc_Msg_pass}_POPULATED)
         FetchContent_Populate(Msg_pass)
-        add_subdirectory(${Msg_pass_SOURCE_DIR} ${Msg_pass_BINARY_DIR} EXCLUDE_FROM_ALL)
+        add_subdirectory(${${lc_Msg_pass}_SOURCE_DIR} ${${lc_Msg_pass}_BINARY_DIR} EXCLUDE_FROM_ALL)
     endif()
 endif()
 
