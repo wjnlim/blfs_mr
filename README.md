@@ -68,10 +68,10 @@ invokes ```MR_run_task()``` to execute the assigned task. Map tasks run the user
 
 ## Quick Start Guide
 ### Scripts and Configuration Files
-```sharedfiles```: Cotains a list of **\<filename\>:\<size\>** pairs, one per line, 
+```sharedfiles```: Contains a list of **\<filename\>:\<size\>** pairs, one per line, 
 specifying the pre-allocated intermediate files.
 
-```alloc_shared_files.sh```: Creates the shared intermediate files listed in ```sharedfiles``` on the device file provided as input.
+```alloc_shared_files.sh```: Creates the shared intermediate files listed in ```sharedfiles``` on the device provided as input.
 
 ```set_env.sh```: Sets the ```BLFS_MR_HOME``` envrionment variable, which defines the project’s base directory.
 
@@ -79,8 +79,8 @@ specifying the pre-allocated intermediate files.
 
 ```mnt_targets.sh```: Logs into all worker nodes' iSCSI targets and mounts them.
 
-```init_workers.sh```: Initializes worker nodes by creating directories for input splits and output partitions and executing the ```mnt_targets.sh``` on each nodes. 
-Generates the ```workers_n_splits``` metadata file, which stores
+```init_workers.sh```: Initializes worker nodes by creating directories for input splits and output partitions, and executes the ```mnt_targets.sh``` on each nodes. 
+Also generates the ```workers_n_splits``` metadata file, which stores
 **\<worker\>:\<num_of_input_split\>** pairs used for input-split distribution.
 
 
@@ -96,51 +96,55 @@ Generates the ```workers_n_splits``` metadata file, which stores
 
 ```run_mapred.sh```: Copies a user-provided MapReduce executable to all workers and launches the ```master``` program to execute the MapReduce workflow.
 
-### 4-node cluster Example
-1. Prepare 4nodes. For example,
-    - master/worker0 (172.30.1.33) // this node also works as master node
+### WordCount Example
+Example setup on a 4-node cluster (1 GB shared volumes, 32 MB input, 2 MB intermediate files).
+#### Prerequisites
+1. Prepare 4 nodes, for example:
+    - master/worker0 (172.30.1.33) // this also runs the master process
     - worker1 (172.30.1.34)
     - worker2 (172.30.1.35)
     - worker3 (172.30.1.36)\
-(This project assumes that the master can ssh to all nodes)
-2. Prepare a dedicated raw volume on each node for share iSCSI target.
+(The project assumes passwordless SSH from the master to all nodes.)
+2. Prepare a dedicated raw block device on each node for the shared iSCSI target, 
+e.g.:
     - /dev/sdX
-3. Get all initiator name from the worker nodes 
-using ```cat /etc/iscsi/initiatorname.iscsi```.
-    - worker0: iqn.1994-05.com.redhat:AAAA
-    - worker1: iqn.1994-05.com.redhat:BBBB
-    - worker2: iqn.1994-05.com.redhat:CCCC
-    - worker3: iqn.1994-05.com.redhat:DDDD
-1. Configure iSCSI target on **each node**.\
-Put your backstore_name and device name instead of '\<backstore_name\>' and '/dev/sdX', '/dev/sdY'.\
-Put the node's ip and name instead of '\<ip\>' and '\<worker name\>'.\
-Put your initiator names instread of the 'iqn.1994-05.com.redhat:AAAA',...
+3. Obtain each node’s initiator name using: ```cat /etc/iscsi/initiatorname.iscsi```:
+   - worker0: iqn.1994-05.com.redhat:AAAA
+   - worker1: iqn.1994-05.com.redhat:BBBB
+   - worker2: iqn.1994-05.com.redhat:CCCC
+   - worker3: iqn.1994-05.com.redhat:DDDD
+#### Per-Node Setup (the following steps must be performed on **each node**)
+
+1. Configure the iSCSI target.\
+Replace \<worker name\>, /dev/sdX, /dev/sdY, \<ip\>,  and initiator IQNs ('iqn.1994-05.com.redhat:AAAA',...) with your values.
 ```bash
 # prerequisites
 # install targetcli
 yum install targetcli -y
 systemctl start target
 systemctl enable target
-# open the 3260 port for the iSCSI protocol
+
+# open port 3260 for iSCSI
 firewall-cmd --permanent --add-port=3260/tcp
 firewall-cmd --reload
+
 # install initiator
 yum install iscsi-initiator-utils -y
 systemctl enable iscsid iscsi
 systemctl start iscsid iscsi
 
 # create a block backstore
-# this project use a name format: <worker name>_shared.
-# please follow the format.
+# naming format: <worker name>_shared
 sudo targetcli "backstores/block create name=<worker name>_shared dev=/dev/sdX"
-# create a iSCSI target with IQN 
-# this project uses format: iqn.2022-05.<worker's ip>:<worker name>
-# please follow the format.
+
+# create an iSCSI target with IQN
+# naming format: iqn.2022-05.<ip>:<worker name>
 sudo targetcli "iscsi/ create iqn.2022-05.<ip>:<worker name>"
+
 # create a LUN
 sudo targetcli "iscsi/iqn.2022-05.<ip>:<worker name>/tpg1/luns create \ /backstores/block/<worker name>_shared"
 
-# Add all the initiator names to the ACL allowing them to
+# Add all initiator names to the ACL, enabling them to
 # connect the target
 sudo targetcli "iscsi/iqn.2022-05.<ip>:<worker name>/tpg1/acls \
 create iqn.1994-05.com.redhat:AAAA"
@@ -153,50 +157,73 @@ create iqn.1994-05.com.redhat:DDDD"
 # save the configuration
 sudo targetcli "saveconfig"
 
-# perform a discovery to local target
+# discover and log in
 iscsiadm --mode discovery --type sendtargets --portal <ip>
-# log in to the target
 iscsiadm -m node -T iqn.2022-05.<ip>:<worker name> -l
-# Check the target's device name (e.g., /dev/sdY)
+
+# verify device (e.g., /dev/sdY)
 lsscsi
-# Format the device with the ext4 file system
+
+# format the shared device with the ext4 file system
 sudo mkfs.ext4 /dev/sdY
 ```
-5. Build and install the project source code on **each node**.
+
+2. Build and install the project:
 ```bash
-# 1. Clone the repository
 git clone https://github.com/wjnlim/blfs_mr.git
 
-# 2. Create a build directory
 mkdir blfs_mr/build
 cd blfs_mr/build
 
-# 3. Configure with CMake
 cmake -DCMAKE_INSTALL_PREFIX=<your install directory> ..
-
-# 4. Build and install the library
 cmake --build . --target install
 ```
-6. Set the project's environment variable on **each node**.
+3. Set the project environment variable:
 ```bash
 # Change directory to blfs_mr/
 cd ..
 ./set_env.sh && source ~/.bashrc
 ```
-7. Configure the ```sharedfiles``` file (default configuration specifying 64 files named with 'shfileXX', sized with 2MB) and
-create shared files on the target device on **each node** (make sure you are logged into the target)
+4. Configure the ```sharedfiles``` file (default: 64 files named shfileXX, each 2 MB) and create the shared files on the target device (ensure the node is logged into the target):
 ```bash
 ./alloc_shared_files.sh /dev/sdY
 ```
-8. configure the ```workers``` file with **\<worker name\>:\<ip\>** pairs, one per line, on **each node**
-
-9.  On **master node**, Initialize the workers.
+<!-- 8. configure the ```workers``` file with **\<worker name\>:\<ip\>** pairs, one per line, on **each node** -->
+---
+#### Master-Node Setup
+1. configure the ```workers``` file with **\<worker name\>:\<ip\>** pairs, one per line.
+2. **After the per-node setup is complete,**, Initialize the workers from the master:
 ```bash
 ./init_workers.sh
 ```
-10.  Write a MapReduce program and compile.
-(This example use the [mr_wordcount.c](mr_wordcount.c))
+#### Run a MapReduce program
+1. Write and compile a MapReduce program
+(example: [mr_wordcount.c](mr_wordcount.c)):
 ```bash
 gcc mr_wordcount.c -o mr_wordcount -I <your install directory>include/ \
 <your install directory>lib/libblfs_mr.a -lpthread
+```
+2. (Optional) Generate a WordCount input:
+```bash
+# ex) ./gen_wordcount_input.sh inputs/32M_input 32Mi
+./gen_wordcount_input.sh <path to input> 32Mi
+```
+3. Distribute the input across the workers (this will generate a .meta file for the input):
+```bash
+# across all workers, 2MB chunks
+# ex) ./distr_input.sh inputs/32M_input 2M 
+# or across worker0 and worker1 only
+# ex) ./distr_input.sh inputs/32M_input 2M -w "worker0 worker1"
+./distr_input.sh <path to input> <chunk size>
+```
+4. Run the MapReduce job (this will generate a .meta file for the output):
+```bash
+# ex) ./run_mapred.sh mr_wordcount build/master workers inputs/32M_input.meta outputs/32M_output.meta
+./run_mapred.sh <path to the wordcount executable> build/master workers \
+<path to the input metadata> <path to the output metadata>
+```
+5. Print the output:
+```bash
+# ex) ./print_output.sh outputs/32M_output.meta -s # '-s' for sorted output
+./print_output.sh <path to the output metadata>
 ```
