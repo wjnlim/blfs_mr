@@ -46,7 +46,7 @@ worker_dev=$(lsscsi | awk "/${worker_name}_shared/ {print \$NF}")
 cmd="$BLFS_MR_HOME/bin/worker $worker_name $worker_ip $worker_dev"
 if [[ "$background" == "true" ]]; then
     echo "executing in the background: $cmd"
-    $cmd &
+    $cmd &>/dev/null &
 else
     echo "executing $cmd"
     $cmd
