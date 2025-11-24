@@ -33,24 +33,23 @@ is_local_ip() {
 for line in $(cat $workerlist);
 do
     worker="$(echo $line | awk -F: '{print $1}')"
-    ip="$(echo $line | awk -F: '{print $2}')"
+    worker_ip="$(echo $line | awk -F: '{print $2}')"
     # copy the 'workers' file
-    if ! is_local_ip "$ip"; then
-        do
-            sftp $ip <<EOF
-put "$workerlist" "\$BLFS_MR_HOME/"
+    if ! is_local_ip "$worker_ip"; then
+        remote_dir=$(ssh $worker_ip "echo \$BLFS_MR_HOME")
+        sftp $worker_ip <<EOF
+put "$workerlist" "$remote_dir"
 bye
 EOF
-        done
     fi
-    # echo $ip
-    ssh "$ip" "mkdir -p \$BLFS_MR_HOME/data/inputs; mkdir \$BLFS_MR_HOME/data/outputs;\
-    cd \$BLFS_MR_HOME && ./mnt_targets.sh $worker"
-    # ssh "$ip" 'mkdir -p $BLFS_MR_HOME/data/inputs; mkdir $BLFS_MR_HOME/data/outputs;\
+    # echo $worker_ip
+    ssh "$worker_ip" "mkdir -p \$BLFS_MR_HOME/data/inputs; mkdir \$BLFS_MR_HOME/data/outputs;\
+    mkdir \$BLFS_MR_HOME/mapred_bin; \$BLFS_MR_HOME/mnt_targets.sh $worker"
+    # ssh "$worker_ip" 'mkdir -p $BLFS_MR_HOME/data/inputs; mkdir $BLFS_MR_HOME/data/outputs;\
     # mkdir $BLFS_MR_HOME/mnt'
-    for l in $(cat $workerlist);
-    do
-        w="$(echo $l | awk -F: '{print $1}')"
-        ssh "$ip" "mkdir \$BLFS_MR_HOME/mnt/$w"
-    done
+    # for l in $(cat $workerlist);
+    # do
+    #     w="$(echo $l | awk -F: '{print $1}')"
+    #     ssh "$worker_ip" "mkdir \$BLFS_MR_HOME/mnt/$w"
+    # done
 done
