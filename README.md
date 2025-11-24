@@ -94,6 +94,12 @@ Also generates the ```workers_n_splits``` metadata file, which stores
 
 ```print_output.sh```: Prints the final output by merging all output partitions.
 
+```run_worker.sh```: Start a worker process.
+
+```start_workers.sh```: Starts worker processes on all worker nodes.
+
+```stop_workers.sh```: Stops worker processes on all worker nodes.
+
 ```run_mapred.sh```: Copies a user-provided MapReduce executable to all workers and launches the ```master``` program to execute the MapReduce workflow.
 
 ### WordCount Example
@@ -217,13 +223,17 @@ gcc mr_wordcount.c -o mr_wordcount -I <your install directory>include/ \
 # ex) ./distr_input.sh inputs/32M_input 2M -w "worker0 worker1"
 ./distr_input.sh <path to input> <chunk size>
 ```
-4. Run the MapReduce job (this will generate a .meta file for the output):
+4. Start worker processes on all worker nodes from the **master**:
 ```bash
-# ex) ./run_mapred.sh mr_wordcount build/master workers inputs/32M_input.meta outputs/32M_output.meta
-./run_mapred.sh <path to the wordcount executable> build/master workers \
+./start_workers.sh
+```
+5. Run the MapReduce job (this will generate a .meta file for the output):
+```bash
+# ex) ./run_mapred.sh mr_wordcount inputs/32M_input.meta outputs/32M_output.meta
+./run_mapred.sh <path to the wordcount executable> \
 <path to the input metadata> <path to the output metadata>
 ```
-5. Print the output:
+6. Print the output:
 ```bash
 # ex) ./print_output.sh outputs/32M_output.meta -s # '-s' for sorted output
 ./print_output.sh <path to the output metadata>

@@ -93,9 +93,9 @@ Worker_conn* master_ctx_get_worker_conn(Master_context* mctx, const char* name) 
 
 void master_ctx_print_assigned_tasks(Master_context* mctx) {
     Worker_conn* wc;
-    printf("assigned tasks...\n");
+    printf("\nassigned tasks...\n");
     TAILQ_FOREACH(wc, &g_master_ctx.worker_list, wc_link) {
-        printf("[[%s]] ", wc->name);
+        printf("\n[[%s]] ", wc->name);
         if (!deque_empty(wc->assigned_map_tasks)) {
             Deque_iterator* dit = deque_front(wc->assigned_map_tasks);
             Map_task_info* mti;
