@@ -32,6 +32,7 @@
 #define MR_EXEC_DIR "mapred_bin"
 #define SHARED_FILE_LIST "sharedfiles"
 #define SHARED_DIR "mnt"
+#define MR_OUTPUT_DIR "data/outputs"
 
 struct Worker_context {
     const char* name;
@@ -690,7 +691,7 @@ void worker_context_init(const char* worker_name, const char* worker_ip,
     sprintf(g_wctx.mr_exe_dir, "%s/%s", blfs_mr_home_env, MR_EXEC_DIR);
     sprintf(g_wctx.shared_file_list, "%s/%s", blfs_mr_home_env, SHARED_FILE_LIST);
     sprintf(g_wctx.shared_dir, "%s/%s", blfs_mr_home_env, SHARED_DIR);
-    sprintf(g_wctx.worker_output_dir, "%s/data/outputs", blfs_mr_home_env);
+    sprintf(g_wctx.worker_output_dir, "%s/%s", blfs_mr_home_env, MR_OUTPUT_DIR);
 
     g_wctx.master_conn = NULL;
 
@@ -713,16 +714,15 @@ void worker_context_init(const char* worker_name, const char* worker_ip,
 int main(int argc, char* argv[]) {
     // worker <worker name> <worker ip> <mr exe dir> 
     //                  <shared file list> <shared_dir> <shared_dev>
-    if (argc != 7) {
-        err_exit("[worker.c: main()] "
-                    "usage: %s <worker name> <worker ip> <mapreduce executable dir> " 
-                    "<shared file list> <shared_dir> <shared_dev>", argv[0]);
-    }
+    // if (argc != 7) {
+    //     err_exit("[worker.c: main()] "
+    //                 "usage: %s <worker name> <worker ip> <mapreduce executable dir> " 
+    //                 "<shared file list> <shared_dir> <shared_dev>", argv[0]);
+    // }
     // worker <worker name> <worker ip> <shared_dev>
     if (argc != 4) {
         err_exit("[worker.c: main()] "
-                    "usage: %s <worker name> <worker ip> " 
-                    "<shared_dev>", argv[0]);
+                    "usage: %s <worker name> <worker ip> <shared_dev>", argv[0]);
     }
 
     pthread_t sig_thr;
