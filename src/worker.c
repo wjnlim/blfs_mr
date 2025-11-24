@@ -46,10 +46,13 @@ struct Worker_context {
     // char shared_dir[PATH_MAX];
     const char* worker_ip;
 
-    const char* mr_exe_dir;
-    const char* shared_file_list;
-    const char* shared_dir;
+    // const char* mr_exe_dir;
+    // const char* shared_file_list;
+    // const char* shared_dir;
     const char* shared_dev_file;
+    char mr_exe_dir[PATH_MAX];
+    char shared_file_list[PATH_MAX];
+    char shared_dir[PATH_MAX];
     char worker_output_dir[PATH_MAX];
 
     Mp_client* master_conn;
