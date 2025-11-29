@@ -1,28 +1,28 @@
 # MapReduce Using Block-Level File Sharing over iSCSI
-A lightweight MapReduce framework that uses shared iSCSI block devices to access intermediate data directly between worker nodes.
+A lightweight MapReduce framework that uses shared iSCSI block devices to access intermediate data directly between worker nodes without a distributed file system.
 
 ## Overview
-This research project presents an experimental MapReduce framework that leverages **shared iSCSI volumes** for block-level intermediate file sharing.
-Unlike conventional MapReduce implementations (e.g., Hadoop, Spark), which rely on shuffle daemons and network-based file copying, this framework enables workers to **read and write intermediate data directly on shared block devices**.
+This research project presents an experimental MapReduce framework that leverages **shared iSCSI volumes** for direct access to intermediate data.
+Unlike conventional MapReduce implementations (e.g., Hadoop, Spark), which rely on shuffle daemons and network-based data transfer services, this framework enables workers to **read and write intermediate data directly on shared block devices**.
 
 This design:
 * **Simplifies** the MapReduce architecture
 * **Eliminates redundant data transfers** inherent in traditional shuffle mechanisms
 * Enables **block-level data sharing** across nodes through iSCSI
-* Removes the need for shuffle daemons or file copy services
+* Removes the need for shuffle daemons or data transfer services
 * Allows intermediate files to be accessed as if they were local files
 
-A central focus of the research is resolving **cache inconsistency issues** that occur when multiple nodes share the same iSCSI volumes.
+A central focus of the research is resolving **cache inconsistency issues** that occur when multiple nodes access the same iSCSI volumes without a distributed file system.
 
 ## Documentation
 For full details—including cache analysis, system design, experimental findings, and architectural diagrams—please refer to this 
 **Technical Report:** [blfs_mr.pdf](docs/blfs_mr.pdf)
 
 ## Key Features
-* **Asynchronous master-worker model**\
+* **Asynchronous message-driven master-worker model**\
 Built on my [msg_pass](https://github.com/wjnlim/msg_pass.git) library
 * **iSCSI-based shared intermediate storage**\
-Direct block-level data access across nodes without network-based file copying.
+Direct block-level data access across nodes without network-based data copying.
 * **Simplified MapReduce workflow**\
 No shuffle handler, fetcher, or auxiliary data transfer daemons.
 * **Cache-Consistent Shared Access using:**
@@ -33,16 +33,17 @@ No shuffle handler, fetcher, or auxiliary data transfer daemons.
     * This project is mainly for an **experimental** MapReduce framework design.\
     Thus, the implementation may lack fault-tolerance, load balancing, proper error-handling, so please use it with caution.
     * This project uses my [msg_pass](https://github.com/wjnlim/msg_pass.git) library. The CMake file will automatically fetch the project internally
+    * The blfs_mr library depends on pthread, so you must link with **-lpthread**.
 
 ## Core Concept: Pre-Allocated Files Approach
 ISCSI provides no built-in cache coherence and most file systems do
 not have built-in conflict resolution for shared access.
-Thus, sharing iSCSI volumes directly among workers creates cache inconsistency problems, where reducers do not detect new files created by mappers.
+Thus, sharing iSCSI volumes among workers without a distributed file system creates cache inconsistency problems, where reducers do not detect new files created by mappers.
 While explicit cache-dropping before every intermediate file opening fixes the issue, it is prohibitively expensive.
 
 To address this, the framework adopts:
 * **Pre-Allocated Files Strategy**
-  * All intermediate files are created on each node’s local iSCSI target before that disk is mounted by remote nodes.
+  * All intermediate files are created on each node’s local iSCSI target before that target disk is mounted by remote nodes.
   * Mappers are assigned pre-created intermediate files and simply overwrite them rather than creating new ones.
   * Mappers flush intermediate data using ```fsync(fd)``` and ```fsync(blkdev_fd)```
   to ensure durability.
@@ -51,7 +52,6 @@ To address this, the framework adopts:
   * **Notes**
     * This experimental design was implemented based on an assumption that
       each node has enough pre-allocated file for tasks.
-    * The blfs_mr library depends on pthread, so you must link with **-lpthread**.
   
 This ensures consistent shared access without needing a distributed file system and without imposing expensive cache invalidation operations.
 ## How the MapReduce framework works using intermediate file sharing
@@ -62,9 +62,9 @@ This ensures consistent shared access without needing a distributed file system 
 assigns reduce tasks to workers with the smallest current task load.
 2. Each worker spawns processes to run the MapReduce program. The program
 invokes ```MR_run_task()``` to execute the assigned task. Map tasks run the user-defined ```Mapper``` function.
-3. Mappers write intermediate data to pre-allocated files provided by the local worker process and flush the data using both ```fsync(fd)``` and ```fsync(blkdev fd)```. Then they notify task completions to the master.
+3. Mappers write intermediate data to pre-allocated files provided by their local worker processes and flush the data using both ```fsync(fd)``` and ```fsync(blkdev fd)```. Then they notify task completions to the master.
 4. When reducers are notified by the master about these files, they open the files using the ```O_DIRECT``` flag and read the data directly from remote shared disks.
-5. Reducers run the user-defined ```Reducer``` function and write final outputs to their local disks.
+5.  After reading all intermediate data, reducers run the user-defined ```Reducer``` function and write final outputs to their local disks.
 
 ## Quick Start Guide
 ### Scripts and Configuration Files
@@ -77,18 +77,18 @@ specifying the pre-allocated intermediate files.
 
 ```workers```: Contains **\<worker name\>:\<ip\>** pairs. Used by scripts for worker name ↔ IP resolution.
 
-```mnt_targets.sh```: Logs into all worker nodes' iSCSI targets and mounts them.
+```mnt_targets.sh```: Logs into all worker nodes' iSCSI targets and mounts them under the ```$BLFS_MR_HOME/mnt``` directory.
 
-```init_workers.sh```: Initializes worker nodes by creating directories for input splits and output partitions, and executes the ```mnt_targets.sh``` on each nodes. 
-Also generates the ```workers_n_splits``` metadata file, which stores
-**\<worker\>:\<num_of_input_split\>** pairs used for input-split distribution.
+```init_workers.sh```: Initializes worker nodes by creating directories for input splits(```$BLFS_MR_HOME/data/inputs```), output partitions(```$BLFS_MR_HOME/data/outputs```), and MapReduce executables(```$BLFS_MR_HOME/mapred_bin```).
+It also runs the ```mnt_targets.sh``` on each node, and generates the ```workers_n_splits``` metadata file, which stores
+**\<worker\>:\<num_of_input_split\>** pairs used for input split distribution.
 
 
 ```gen_wordcount_input.sh```: Generates a random input file for the WordCount MapReduce example.
 
 ```distr_input.sh```: Distributes an input file across the specified workers and produces a metadata file containing **\<file path\>:\<worker\>** mappings.
 
-```rm_isplits.sh```: Deletes the metadata and file splits associated with a given input.
+```rm_isplits.sh```: Deletes the metadata and input splits associated with a given input.
 
 ```rm_outputs.sh```: Deletes the metadata and partitions associated with a given output.
 
